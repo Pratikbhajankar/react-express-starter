@@ -1,7 +1,10 @@
-module.exports = (express,conection) => {
-	var router      = express.Router();
+import EncryptPassword from './../utils/passwordutil.js'
+module.exports = (express, conection) =>
+{
+	var router = express.Router();
 	// Router Middleware
-	router.use((req, res, next) => {
+	router.use((req, res, next) =>
+	{
 		// log each request to the console
 		console.log("You have hit the /api", req.method, req.url);
 
@@ -21,7 +24,8 @@ module.exports = (express,conection) => {
 	});
 
 	// API ROOT - Display Available Routes
-	router.get('/', (req, res) => {
+	router.get('/', (req, res) =>
+	{
 		/*		//TODO: THIS NO LONGER WORKS BECAUSE WE MOVE THE ROUTES INTO A SEPARATE FILE, UNLESS I PASS IN APP AS WELL
 		 //Generate a List of Routes on the APP
 		 //http://stackoverflow.com/a/28199817
@@ -47,16 +51,57 @@ module.exports = (express,conection) => {
 	});
 
 	// Simple MySQL Test
-	router.get('/test', (req, res) => {
-		conection.any('SELECT * FROM customer', [true])
-			.then(function(data) {
-				res.jsonp({"res":data});
+	router.get('/test', (req, res) =>
+	{
+		conection.any('SELECT * FROM users', [true])
+			.then(function (data)
+			{
+				res.jsonp({"res": data});
 			})
-			.catch(function(error) {
-				res.jsonp({"res":error})
+			.catch(function (error)
+			{
+				res.jsonp({"res": error})
 			});
 
 	});
+	router.get('/login', (req, res) =>
+	{
 
+	});
+
+	router.post('/signup', (req, res) =>
+	{
+		let response = {"code": 400, "msg": ""};
+		//todo validation
+		const data = req.body;
+		console.log("in post method", req.body.id);
+		console.log("in post method", req.body.email);
+		EncryptPassword.generateHash(data.password, 5, (hash) =>
+		{
+			console.log("here hash",hash);
+			if (hash == null)
+			{
+				res.send(response);
+				return;
+			}
+			const dataToInsert = [data.email, data.firstname, hash];
+			console.log("here upto");
+			conection.one('INSERT INTO users(email, firstname, username, password)' +
+				'VALUES ($1,$2,$1,$3) RETURNING id', dataToInsert)
+				.then(data =>
+				{
+					console.log("here  data",data);
+					response.code = 200;
+					response.msg = "user id is "+data;
+					res.send(response);
+				})
+				.catch(error =>
+				{
+					console.log('ERROR:', error); // print error;
+					response.msg = error;
+					res.send(response);
+				})
+		});
+	});
 	return router;
 };
