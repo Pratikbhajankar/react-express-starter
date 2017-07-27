@@ -4047,7 +4047,7 @@ module.exports =
 /* 59 */
 /***/ (function(module, exports, __webpack_require__) {
 
-  'use strict';
+  "use strict";
   
   Object.defineProperty(exports, "__esModule", {
   	value: true
@@ -4061,11 +4061,10 @@ module.exports =
   
   var _createClass3 = _interopRequireDefault(_createClass2);
   
-  var _bcrypt = __webpack_require__(108);
-  
-  var _bcrypt2 = _interopRequireDefault(_bcrypt);
-  
   function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+  
+  var bcrypt = __webpack_require__(108);
+  var saltRounds = 10;
   
   var EncryptPassword = function () {
   	function EncryptPassword() {
@@ -4073,22 +4072,16 @@ module.exports =
   	}
   
   	(0, _createClass3.default)(EncryptPassword, [{
-  		key: 'generateHash',
+  		key: "generateHash",
   		value: function generateHash(passwrod, count, callback) {
-  			_bcrypt2.default.hash(passwrod, count, callback, function (err, bCryptedPassword) {
-  				if (err) callback(null);
-  
-  				callback(bCryptedPassword);
-  			});
+  			console.log("here in hash creation method");
+  			callback(bcrypt.hashSync(passwrod, count));
   		}
   	}, {
-  		key: 'compareHash',
+  		key: "compareHash",
   		value: function compareHash(passwrod, hash, callback) {
-  			_bcrypt2.default.compare(passwrod, hash, function (err, doesMatch) {
-  				if (err) callback(null);
-  
-  				callback(doesMatch);
-  			});
+  			console.log("here in hash compaire method");
+  			callback(bcrypt.compareSync(passwrod, hash));
   		}
   	}]);
   	return EncryptPassword;

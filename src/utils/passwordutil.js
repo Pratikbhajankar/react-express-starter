@@ -1,22 +1,14 @@
-import bcrypt from 'bcrypt';
+var bcrypt = require('bcrypt');
+const saltRounds = 10;
 class EncryptPassword {
-	generateHash(passwrod,count,callback){
-		bcrypt.hash(passwrod,count,callback,(err, bCryptedPassword)=>{
-			if(err)
-				callback(null);
-
-			callback(bCryptedPassword);
-
-		});
+	generateHash(passwrod, count, callback) {
+		console.log("here in hash creation method");
+		callback(bcrypt.hashSync(passwrod, count));
 	}
 
-	compareHash(passwrod,hash,callback){
-		bcrypt.compare(passwrod,hash,(err, doesMatch)=>{
-			if(err)
-				callback(null);
-
-			callback(doesMatch);
-		})
+	compareHash(passwrod, hash, callback) {
+		console.log("here in hash compaire method");
+		callback(bcrypt.compareSync(passwrod, hash));
 	}
 };
 export default new EncryptPassword();
