@@ -22,6 +22,24 @@ import schema from './data/schema';
 import Router from './routes';
 import assets from './assets';
 import { port, auth, analytics } from './config';
+import Promise from 'bluebird';
+import pgPromise from 'pg-promise';
+
+const initOptions = {
+	promiseLib:Promise,
+	connect: (client, dc, isFresh) => {
+		const cp = client.connectionParameters;
+		console.log('Connected to database:', cp.database);
+	},
+	disconnect: (client, dc) => {
+		const cp = client.connectionParameters;
+		console.log('Disconnecting from database:', cp.database);
+	},
+	query: e => {
+		console.log('QUERY:', e.query);
+	}
+};
+const pgp = pgPromise(initOptions);
 
 const server = global.server = express();
 
@@ -52,18 +70,37 @@ server.use(expressJwt({
 }));
 server.use(passport.initialize());
 
-server.get('/login/facebook',
-  passport.authenticate('facebook', { scope: ['email', 'user_location'], session: false })
-);
-server.get('/login/facebook/return',
-  passport.authenticate('facebook', { failureRedirect: '/login', session: false }),
-  (req, res) => {
-    const expiresIn = 60 * 60 * 24 * 180; // 180 days
-    const token = jwt.sign(req.user, auth.jwt.secret, { expiresIn });
-    res.cookie('id_token', token, { maxAge: 1000 * expiresIn, httpOnly: true });
-    res.redirect('/');
-  }
-);
+//Adding Middleware
+var credentials;
+try{
+	credentials = require('./credentials'); //CREATE THIS FILE YOURSELF
+}catch(e){
+	//heroku support
+	credentials = require('./credentials_env');
+}
+//var connection  = mysql.createConnection(credentials);
+//connection.connect();
+var connection = pgp(credentials);
+var apiRouter = require('./api/index.js')(express,connection);
+
+server.use('/api', apiRouter);
+
+//server.get('/login/facebook',
+//  passport.authenticate('facebook', { scope: ['email', 'user_location'], session: false })
+//);
+//server.get("/api/test",(req,res)=>{
+//	console.log("here in test")
+//	res.send("ok you are in");
+//})
+//server.get('/login/facebook/return',
+//  passport.authenticate('facebook', { failureRedirect: '/login', session: false }),
+//  (req, res) => {
+//    const expiresIn = 60 * 60 * 24 * 180; // 180 days
+//    const token = jwt.sign(req.user, auth.jwt.secret, { expiresIn });
+//    res.cookie('id_token', token, { maxAge: 1000 * expiresIn, httpOnly: true });
+//    res.redirect('/');
+//  }
+//);
 
 //
 // Register API middleware
@@ -78,7 +115,7 @@ server.use('/graphql', expressGraphQL(req => ({
 //
 // Register server-side rendering middleware
 // -----------------------------------------------------------------------------
-server.get('*', async (req, res, next) => {
+server.get('/*', async (req, res, next) => {
   try {
     let statusCode = 200;
     const template = require('./views/index.jade');
@@ -125,6 +162,7 @@ server.use((err, req, res, next) => { // eslint-disable-line no-unused-vars
     stack: process.env.NODE_ENV === 'production' ? '' : err.stack,
   }));
 });
+
 
 //
 // Launch the server
